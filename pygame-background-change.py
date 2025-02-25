@@ -1,15 +1,20 @@
 import pygame
 import random
 import os
-
-# Ініціалізація Pygame
+import time
 pygame.init()
 
-# Налаштування вікна
-WINDOW_WIDTH = 800
-WINDOW_HEIGHT = 600
-screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
-pygame.display.set_caption("Зміна фону при кліку")
+BLACH = (0, 0, 0)
+WIDTH = 800
+HEIGHT = 600
+show_attacker = False
+
+font1 = pygame.font.SysFont(None, 25)
+
+clock = pygame.time.Clock()
+
+window = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Dung Crawl")
 
 # Завантаження зображень
 # Припустимо, що у вас є папка 'backgrounds' з фоновими зображеннями
@@ -21,35 +26,73 @@ for bg_file in os.listdir('backgrounds'):
         bg = pygame.image.load(bg_path).convert()
         backgrounds.append(bg)
 
-# Завантаження спрайту
 sprite = pygame.image.load('sprite.png').convert_alpha()
 sprite_rect = sprite.get_rect()
-sprite_rect.center = (WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2)
+sprite_rect.center = (0, 0)
 
-# Початковий фон
 current_bg = 0
 
-# Головний цикл гри
+class GameSprite(pygame.sprite.Sprite):
+    def __init__(self, image, xar, ys, w, h):
+        super().__init__()
+        self.h = h
+        self.w = w
+        self.image = pygame.transform.scale(pygame.image.load(image), (w, h))
+        self.rect = self.image.get_rect()
+        self.rect.x = xar
+        self.rect.y = ys
+    
+    def reset(self):
+        window.blit(self.image, (self.rect.x, self.rect.y))
+
+class Palehin(GameSprite):
+    def __init__(self, image, xar, ys, w, h, palehin_ht, palehin_ar, palehin_ak):
+        super().__init__(image, xar, ys, w, h)
+        self.palehin_hp = palehin_ht
+        self.palehin_arm = palehin_ar
+        self.palehin_ak = palehin_ak
+
+    def attak(self, enemy):
+        attacker = GameSprite("sprite.png", self.rect.x, self.rect.centery, 50, 50)
+        global show_attacker
+        show_attacker = True
+        if show_attacker == True:
+            attacker.reset()
+            time.sleep(1)
+            show_attacker = False
+        enemy.palehin_ar -= self.palehin_ak
+        if enemy.palehin_ar < 0:
+            enemy.palehin_ht += enemy.palehin_ar
+            enemy.palehin_ar = 0
+
+palehin = Palehin("palehin.png", 200, 400, 50, 50, 20, 5, 10)
+
 running = True
+finish = False
 while running:
+
+    while finish:
+        palehin.reset()
+        
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        
-        # Перевірка кліку миші
+
         if event.type == pygame.MOUSEBUTTONDOWN:
-            # Якщо клік потрапив на спрайт
             if sprite_rect.collidepoint(event.pos):
-                # Випадково вибираємо новий фон
                 new_bg = random.randint(0, len(backgrounds) - 1)
-                # Переконуємось, що новий фон відрізняється від поточного
                 while new_bg == current_bg and len(backgrounds) > 1:
                     new_bg = random.randint(0, len(backgrounds) - 1)
-                current_bg = new_bg
+                current_bg = new_bg    
+
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_a:
+                palehin.attak() == True
+
     
-    # Відображення
-    screen.blit(backgrounds[current_bg], (0, 0))  # Малюємо фон
-    screen.blit(sprite, sprite_rect)  # Малюємо спрайт
+
+    window.blit(backgrounds[current_bg], (0, 0))
+    window.blit(sprite, sprite_rect)
     pygame.display.flip()
 
 pygame.quit()
