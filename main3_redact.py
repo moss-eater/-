@@ -96,9 +96,6 @@ class PyGameWidget(QWidget):
                 if "Зілля здоров'я" in item["name"]:
                     self.game_state.health = min(self.game_state.max_health, self.game_state.health + 20)
                     self.health_changed.emit(self.game_state.health)
-                elif "Зілля енергії" in item["name"]:
-                    self.game_state.armour = min(self.game_state.max_armour, self.game_state.armour + 30)
-                    self.armour_changed.emit(self.game_state.armour)
         
         # Випадкові пошкодження (для демонстрації)
         #if random.random() < 0.005:  # 0.5% шанс пошкодження щотику
@@ -230,9 +227,9 @@ class GameInterface(QMainWindow):
         health_layout.addWidget(health_label)
         health_layout.addWidget(self.health_bar)
         
-        # Енергія
+        # Щит
         armour_layout = QVBoxLayout()
-        armour_label = QLabel("Енергія:")
+        armour_label = QLabel("Щит:")
         self.armour_bar = StatBar(self.game_state.armour, self.game_state.max_armour, "#3498DB")
         armour_layout.addWidget(armour_label)
         armour_layout.addWidget(self.armour_bar)
@@ -257,10 +254,12 @@ class GameInterface(QMainWindow):
         # Кнопки
         button_layout = QHBoxLayout()
         use_button = QPushButton("Використати")
+        equip_button = QPushButton("Взяти/Надягнути")
         drop_button = QPushButton("Викинути")
         
         button_layout.addWidget(use_button)
         button_layout.addWidget(drop_button)
+        button_layout.addWidget(equip_button)
         
         # Обробники подій
         use_button.clicked.connect(self.use_item)
@@ -319,10 +318,6 @@ class GameInterface(QMainWindow):
             self.game_state.health = min(self.game_state.max_health, self.game_state.health + 25)
             self.update_health(self.game_state.health)
             self.game_state.inventory.remove(item_name)
-        elif "Зілля енергії" in item_name:
-            self.game_state.armour = min(self.game_state.max_armour, self.game_state.armour + 40)
-            self.update_armour(self.game_state.armour)
-            self.game_state.inventory.remove(item_name)
         elif "Золота монета" in item_name:
             self.game_state.score += 10
             self.game_state.inventory.remove(item_name)
@@ -354,6 +349,16 @@ class GameInterface(QMainWindow):
         
         # Оновлюємо інвентар
         self.inventory_list.update_inventory()
+
+    def equip_item(self):
+        selected_items = self.inventory_list.selectedItems()
+        if not selected_items:
+            return
+            
+        item_name = selected_items[0].text()
+
+        #головна штука -- зробити зміну у арморі гравця та його атаки
+        #також я думаю зробити механіки рандому для меча та лука -- коли лук, то шкода менша, то шанс удару по собі менший, коли меч то шкода більша, шанс удару по собі більший
 
 
 if __name__ == "__main__":
