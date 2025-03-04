@@ -1,4 +1,5 @@
 import sys
+import os
 import random
 import pygame
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
@@ -13,16 +14,18 @@ class GameState:
     def __init__(self):
         self.health = 10
         self.max_health = 10
-        self.armour = 80
-        self.max_armour = 100
+        self.armour = 5
+        self.max_armour = 50
         self.score = 0
         self.inventory = ["Меч", "Зілля здоров'я", "Ключ"]
-        self.player_x = 100
+        self.player_x = 250
         self.player_y = 100
         self.items_on_ground = [
             {"name": "Золота монета", "x": 200, "y": 150},
             {"name": "Лук", "x": 150, "y": 300}
         ]
+        self.atk = 5
+
 
 
 class PyGameWidget(QWidget):
@@ -56,6 +59,21 @@ class PyGameWidget(QWidget):
         
         # Встановлюємо фокус, щоб отримувати події клавіатури
         self.setFocusPolicy(Qt.StrongFocus)
+
+        try:
+            # Завантаження зображень зброї
+            self.sword_img = pygame.image.load("sord.png")
+            self.sword_img = pygame.transform.scale(self.sword_img, (40, 40))
+            
+            self.bow_img = pygame.image.load("luck.png")
+            self.bow_img = pygame.transform.scale(self.bow_img, (50, 30))
+        except Exception as e:
+            print(f"Помилка завантаження зображень зброї: {e}")
+            self.sword_img = None
+            self.bow_img = None
+        
+        # Змінна для поточної екіпіройваної зброї
+        self.current_weapon = None
     
     def keyPressEvent(self, event):
         self.keys_pressed.add(event.key())
@@ -63,26 +81,68 @@ class PyGameWidget(QWidget):
     def keyReleaseEvent(self, event):
         if event.key() in self.keys_pressed:
             self.keys_pressed.remove(event.key())
+
+    def check_collision_with_walls(self, new_x, new_y):
+        # Якщо фонове зображення не завантажено, дозволяємо рух
+        if not hasattr(self, 'background_image') or self.background_image is None:
+            return True
+        
+        # Розмір спрайта гравця
+        player_radius = 15
+        
+        # Перевірка точок навколо центру гравця
+        check_points = [
+            (new_x, new_y),  # Центр
+            (new_x - player_radius, new_y),  # Ліво
+            (new_x + player_radius, new_y),  # Право
+            (new_x, new_y - player_radius),  # Верх
+            (new_x, new_y + player_radius)   # Низ
+        ]
+        
+        try:
+            for x, y in check_points:
+                # Перевіряємо, чи знаходиться точка в межах зображення
+                if 0 <= x < self.background_image.get_width() and 0 <= y < self.background_image.get_height():
+                    # Отримуємо колір пікселя
+                    color = self.background_image.get_at((int(x), int(y)))
+                    
+                    # Тут визначаємо, які кольори є "стіною"
+                    # Наприклад, білий або сірий колір
+                    if color[0] > 240 and color[1] > 240 and color[2] > 240:  # Білий
+                        return False
+                    
+                    if color[0] > 200 and color[1] > 200 and color[2] > 200:  # Світло-сірий
+                        return False
+        
+        except Exception as e:
+            print(f"Помилка перевірки колізії: {e}")
+
+        return True
     
     def update_game(self):
         # Рух персонажа
         speed = 5
+        new_x, new_y = self.game_state.player_x, self.game_state.player_y
+
         if Qt.Key_A in self.keys_pressed and self.game_state.player_x > 20:
-            self.game_state.player_x -= speed
-            self.game_state.armour = max(0, self.game_state.armour - 0.1)
-            self.armour_changed.emit(self.game_state.armour)
+            new_x = self.game_state.player_x - speed
+            if self.check_collision_with_walls(new_x, self.game_state.player_y):
+                self.game_state.player_x = new_x
+
         if Qt.Key_D in self.keys_pressed and self.game_state.player_x < 480:
-            self.game_state.player_x += speed
-            self.game_state.armour = max(0, self.game_state.armour - 0.1)
-            self.armour_changed.emit(self.game_state.armour)
+            new_x = self.game_state.player_x + speed
+            if self.check_collision_with_walls(new_x, self.game_state.player_y):
+                self.game_state.player_x = new_x
+
         if Qt.Key_W in self.keys_pressed and self.game_state.player_y > 20:
-            self.game_state.player_y -= speed
-            self.game_state.armour = max(0, self.game_state.armour - 0.1)
-            self.armour_changed.emit(self.game_state.armour)
+            new_y = self.game_state.player_y - speed
+            if self.check_collision_with_walls(self.game_state.player_x, new_y):
+                self.game_state.player_y = new_y
+
         if Qt.Key_S in self.keys_pressed and self.game_state.player_y < 580:
-            self.game_state.player_y += speed
-            self.game_state.armour = max(0, self.game_state.armour - 0.1)
-            self.armour_changed.emit(self.game_state.armour)
+            new_y = self.game_state.player_y + speed
+            if self.check_collision_with_walls(self.game_state.player_x, new_y):
+                self.game_state.player_y = new_y
         
         # Перевіряємо колізію з предметами
         for item in self.game_state.items_on_ground[:]:
@@ -104,19 +164,36 @@ class PyGameWidget(QWidget):
             #self.health_changed.emit(self.game_state.health)
         
         # Рендеринг гри
-        self.surface.fill((50, 50, 50))  # Темний фон
+        if hasattr(self, 'background_image') and self.background_image is not None:
+            self.surface.blit(self.background_image, (0, 0))
+        else:
+            self.surface.fill((50, 50, 50))  # Темний фон
+
+        # Малюємо предмети на землі
+        for item in self.game_state.items_on_ground:
+            pygame.draw.rect(self.surface, (255, 215, 0), 
+                            (item["x"] - 10, item["y"] - 10, 20, 20))
         
         # Малюємо границю світу
-        pygame.draw.rect(self.surface, (100, 100, 100), (10, 10, 480, 580), 2)
+        #pygame.draw.rect(self.surface, (100, 100, 100), (10, 10, 480, 580), 2)
         
         # Малюємо персонажа
         pygame.draw.circle(self.surface, (0, 0, 255), 
                            (self.game_state.player_x, self.game_state.player_y), 15)
         
-        # Малюємо предмети на землі
-        for item in self.game_state.items_on_ground:
-            pygame.draw.rect(self.surface, (255, 215, 0), 
-                            (item["x"] - 10, item["y"] - 10, 20, 20))
+        if self.current_weapon == "Меч" and self.sword_img:
+            # Позиціонування меча трохи праворуч від центру персонажа
+            weapon_x = self.game_state.player_x + 20
+            weapon_y = self.game_state.player_y - 10
+            self.surface.blit(self.sword_img, (weapon_x, weapon_y))
+        
+        elif self.current_weapon == "Лук" and self.bow_img:
+            # Позиціонування лука трохи ліворуч від центру персонажа
+            weapon_x = self.game_state.player_x - 40
+            weapon_y = self.game_state.player_y - 10
+            self.surface.blit(self.bow_img, (weapon_x, weapon_y))
+        
+        
         
         # Відображаємо трохи інформації про гру
         font = pygame.font.SysFont(None, 24)
@@ -133,6 +210,20 @@ class PyGameWidget(QWidget):
         painter = QPainter(self)
         painter.drawImage(0, 0, img)
         painter.end()
+
+    def set_background(self, image_path):
+        """
+        Встановлення фонового зображення.
+        :param image_path: шлях до файлу зображення
+        """
+        try:
+            # Завантажуємо зображення та масштабуємо до розміру віджета
+            bg_img = pygame.image.load(image_path)
+            self.background_image = pygame.transform.scale(bg_img, (500, 600))
+        except Exception as e:
+            print(f"Помилка завантаження зображення: {e}")
+            # Якщо не вдалося завантажити, встановлюємо темний фон
+            self.background_image = None
 
 
 class InventoryWidget(QListWidget):
@@ -189,6 +280,7 @@ class GameInterface(QMainWindow):
         super().__init__()
         self.setWindowTitle("PyGame + PyQt5 гра")
         self.setGeometry(100, 100, 1000, 600)
+
         
         # Ініціалізуємо стан гри
         self.game_state = GameState()
@@ -203,6 +295,13 @@ class GameInterface(QMainWindow):
         self.game_widget.item_collected.connect(self.on_item_collected)
         self.game_widget.health_changed.connect(self.update_health)
         self.game_widget.armour_changed.connect(self.update_armour)
+
+        # Додаємо список фонових зображень
+        self.background_images = [
+            "lg_00.png",  # Додайте реальні шляхи до зображень
+            "lg_01.png", 
+            "lg_02.png"
+        ]
         
         # Частина для інтерфейсу (PyQt5)
         interface_widget = QWidget()
@@ -256,6 +355,10 @@ class GameInterface(QMainWindow):
         use_button = QPushButton("Використати")
         equip_button = QPushButton("Взяти/Надягнути")
         drop_button = QPushButton("Викинути")
+
+        change_bg_button = QPushButton("Змінити фон")
+        change_bg_button.clicked.connect(self.change_background)
+        interface_layout.addWidget(change_bg_button)
         
         button_layout.addWidget(use_button)
         button_layout.addWidget(drop_button)
@@ -264,6 +367,7 @@ class GameInterface(QMainWindow):
         # Обробники подій
         use_button.clicked.connect(self.use_item)
         drop_button.clicked.connect(self.drop_item)
+        equip_button.clicked.connect(self.equip_item)
         
         # Інструкції
         instructions_frame = QFrame()
@@ -296,7 +400,9 @@ class GameInterface(QMainWindow):
         # Додаємо всі частини до головного лейауту
         main_layout.addWidget(self.game_widget, 1)
         main_layout.addWidget(interface_widget, 1)
-    
+
+        self.change_background()
+
     def on_item_collected(self, item_name):
         self.inventory_list.update_inventory()
     
@@ -305,6 +411,26 @@ class GameInterface(QMainWindow):
     
     def update_armour(self, armour):
         self.armour_bar.setValue(int(armour))
+    
+    def change_background(self):
+        """
+        Автоматична зміна фону з попередньо визначеного списку
+        """
+        # Якщо список порожній, нічого не робимо
+        if not self.background_images:
+            return
+        
+        # Вибираємо випадкове зображення з списку
+        background_file = random.choice(self.background_images)
+        
+        # Формуємо повний шлях до файлу (припускаємо, що зображення в папці backgrounds)
+        full_path = os.path.join("lackgrounds", background_file)
+        
+        # Перевіряємо чи файл існує
+        if os.path.exists(full_path):
+            self.game_widget.set_background(full_path)
+        else:
+            print(f"Файл {full_path} не знайдено")
     
     def use_item(self):
         selected_items = self.inventory_list.selectedItems()
@@ -357,8 +483,24 @@ class GameInterface(QMainWindow):
             
         item_name = selected_items[0].text()
 
+        # Логіка екіпірування зброї
+        if item_name == "Меч":
+            self.game_widget.current_weapon = "Меч"
+        elif item_name == "Лук":
+            self.game_widget.current_weapon = "Лук"
+        
+        # Додаткова логіка для зміни статів гравця
+        if item_name == "Меч":
+            self.game_state.atk = 10  # Більша атака
+        elif item_name == "Лук":
+            self.game_state.atk = 7   # Менша атака
+            self.game_state.armour += 10
+        # Оновлюємо інвентар
+        self.inventory_list.update_inventory()
+
         #головна штука -- зробити зміну у арморі гравця та його атаки
-        #також я думаю зробити механіки рандому для меча та лука -- коли лук, то шкода менша, то шанс удару по собі менший, коли меч то шкода більша, шанс удару по собі більший
+        #також я думаю зробити механіки рандому для меча та лука 
+        #коли лук, то шкода менша, то шанс удару по собі менший, коли меч то шкода більша, шанс удару по собі більший
 
 
 if __name__ == "__main__":

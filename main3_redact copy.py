@@ -14,8 +14,8 @@ class GameState:
     def __init__(self):
         self.health = 10
         self.max_health = 10
-        self.armour = 8
-        self.max_armour = 10
+        self.armour = 80
+        self.max_armour = 100
         self.score = 0
         self.inventory = ["Меч", "Зілля здоров'я", "Ключ"]
         self.player_x = 100
@@ -24,6 +24,8 @@ class GameState:
             {"name": "Золота монета", "x": 200, "y": 150},
             {"name": "Лук", "x": 150, "y": 300}
         ]
+        self.atk = 5
+
 
 
 class PyGameWidget(QWidget):
@@ -64,6 +66,8 @@ class PyGameWidget(QWidget):
     def keyReleaseEvent(self, event):
         if event.key() in self.keys_pressed:
             self.keys_pressed.remove(event.key())
+
+    ss
     
     def update_game(self):
         # Рух персонажа
@@ -97,9 +101,6 @@ class PyGameWidget(QWidget):
                 if "Зілля здоров'я" in item["name"]:
                     self.game_state.health = min(self.game_state.max_health, self.game_state.health + 20)
                     self.health_changed.emit(self.game_state.health)
-                elif "Зілля енергії" in item["name"]:
-                    self.game_state.armour = min(self.game_state.max_armour, self.game_state.armour + 30)
-                    self.armour_changed.emit(self.game_state.armour)
         
         # Випадкові пошкодження (для демонстрації)
         #if random.random() < 0.005:  # 0.5% шанс пошкодження щотику
@@ -108,10 +109,13 @@ class PyGameWidget(QWidget):
             #self.health_changed.emit(self.game_state.health)
         
         # Рендеринг гри
-        self.surface.fill((50, 50, 50))  # Темний фон
+        if hasattr(self, 'background_image') and self.background_image is not None:
+            self.surface.blit(self.background_image, (0, 0))
+        else:
+            self.surface.fill((50, 50, 50))  # Темний фон
         
         # Малюємо границю світу
-        pygame.draw.rect(self.surface, (100, 100, 100), (10, 10, 480, 580), 2)
+        #pygame.draw.rect(self.surface, (100, 100, 100), (10, 10, 480, 580), 2)
         
         # Малюємо персонажа
         pygame.draw.circle(self.surface, (0, 0, 255), 
@@ -137,6 +141,20 @@ class PyGameWidget(QWidget):
         painter = QPainter(self)
         painter.drawImage(0, 0, img)
         painter.end()
+
+    def set_background(self, image_path):
+        """
+        Встановлення фонового зображення.
+        :param image_path: шлях до файлу зображення
+        """
+        try:
+            # Завантажуємо зображення та масштабуємо до розміру віджета
+            bg_img = pygame.image.load(image_path)
+            self.background_image = pygame.transform.scale(bg_img, (500, 600))
+        except Exception as e:
+            print(f"Помилка завантаження зображення: {e}")
+            # Якщо не вдалося завантажити, встановлюємо темний фон
+            self.background_image = None
 
 
 class InventoryWidget(QListWidget):
@@ -207,6 +225,13 @@ class GameInterface(QMainWindow):
         self.game_widget.item_collected.connect(self.on_item_collected)
         self.game_widget.health_changed.connect(self.update_health)
         self.game_widget.armour_changed.connect(self.update_armour)
+
+        # Додаємо список фонових зображень
+        self.background_images = [
+            "lg_00.png",  # Додайте реальні шляхи до зображень
+            "lg_01.png", 
+            "lg_02.png"
+        ]
         
         # Частина для інтерфейсу (PyQt5)
         interface_widget = QWidget()
@@ -231,9 +256,9 @@ class GameInterface(QMainWindow):
         health_layout.addWidget(health_label)
         health_layout.addWidget(self.health_bar)
         
-        # Енергія
+        # Щит
         armour_layout = QVBoxLayout()
-        armour_label = QLabel("Енергія:")
+        armour_label = QLabel("Щит:")
         self.armour_bar = StatBar(self.game_state.armour, self.game_state.max_armour, "#3498DB")
         armour_layout.addWidget(armour_label)
         armour_layout.addWidget(self.armour_bar)
@@ -258,10 +283,16 @@ class GameInterface(QMainWindow):
         # Кнопки
         button_layout = QHBoxLayout()
         use_button = QPushButton("Використати")
+        equip_button = QPushButton("Взяти/Надягнути")
         drop_button = QPushButton("Викинути")
+
+        change_bg_button = QPushButton("Змінити фон")
+        change_bg_button.clicked.connect(self.change_background)
+        interface_layout.addWidget(change_bg_button)
         
         button_layout.addWidget(use_button)
         button_layout.addWidget(drop_button)
+        button_layout.addWidget(equip_button)
         
         # Обробники подій
         use_button.clicked.connect(self.use_item)
@@ -308,6 +339,26 @@ class GameInterface(QMainWindow):
     def update_armour(self, armour):
         self.armour_bar.setValue(int(armour))
     
+    def change_background(self):
+        """
+        Автоматична зміна фону з попередньо визначеного списку
+        """
+        # Якщо список порожній, нічого не робимо
+        if not self.background_images:
+            return
+        
+        # Вибираємо випадкове зображення з списку
+        background_file = random.choice(self.background_images)
+        
+        # Формуємо повний шлях до файлу (припускаємо, що зображення в папці backgrounds)
+        full_path = os.path.join("lackgrounds", background_file)
+        
+        # Перевіряємо чи файл існує
+        if os.path.exists(full_path):
+            self.game_widget.set_background(full_path)
+        else:
+            print(f"Файл {full_path} не знайдено")
+    
     def use_item(self):
         selected_items = self.inventory_list.selectedItems()
         if not selected_items:
@@ -319,10 +370,6 @@ class GameInterface(QMainWindow):
         if "Зілля здоров'я" in item_name:
             self.game_state.health = min(self.game_state.max_health, self.game_state.health + 25)
             self.update_health(self.game_state.health)
-            self.game_state.inventory.remove(item_name)
-        elif "Зілля енергії" in item_name:
-            self.game_state.armour = min(self.game_state.max_armour, self.game_state.armour + 40)
-            self.update_armour(self.game_state.armour)
             self.game_state.inventory.remove(item_name)
         elif "Золота монета" in item_name:
             self.game_state.score += 10
@@ -355,6 +402,17 @@ class GameInterface(QMainWindow):
         
         # Оновлюємо інвентар
         self.inventory_list.update_inventory()
+
+    def equip_item(self):
+        selected_items = self.inventory_list.selectedItems()
+        if not selected_items:
+            return
+            
+        item_name = selected_items[0].text()
+
+        #головна штука -- зробити зміну у арморі гравця та його атаки
+        #також я думаю зробити механіки рандому для меча та лука 
+        #коли лук, то шкода менша, то шанс удару по собі менший, коли меч то шкода більша, шанс удару по собі більший
 
 
 if __name__ == "__main__":
