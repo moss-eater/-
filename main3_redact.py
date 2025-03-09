@@ -63,10 +63,10 @@ class PyGameWidget(QWidget):
         try:
             # Завантаження зображень зброї
             self.sword_img = pygame.image.load("sord.png")
-            self.sword_img = pygame.transform.scale(self.sword_img, (40, 40))
+            self.sword_img = pygame.transform.scale(self.sword_img, (30, 30))
             
             self.bow_img = pygame.image.load("luck.png")
-            self.bow_img = pygame.transform.scale(self.bow_img, (50, 30))
+            self.bow_img = pygame.transform.scale(self.bow_img, (30, 30))
         except Exception as e:
             print(f"Помилка завантаження зображень зброї: {e}")
             self.sword_img = None
@@ -238,7 +238,7 @@ class InventoryWidget(QListWidget):
                 font-size: 14px;
             }
             QListWidget::item {
-                padding: 5px;
+                padding: 1px;
                 border-bottom: 1px solid #3F3F46;
             }
             QListWidget::item:selected {
@@ -263,14 +263,14 @@ class StatBar(QProgressBar):
         self.setStyleSheet(f"""
             QProgressBar {{
                 border: 1px solid #3F3F46;
-                border-radius: 5px;
+                border-radius: 1px;
                 text-align: center;
                 background-color: #2D2D30;
                 color: white;
             }}
             QProgressBar::chunk {{
                 background-color: {color};
-                border-radius: 5px;
+                border-radius: 1px;
             }}
         """)
 
@@ -316,31 +316,33 @@ class GameInterface(QMainWindow):
         # Рамка для статистики
         stats_frame = QFrame()
         stats_frame.setFrameShape(QFrame.StyledPanel)
-        stats_frame.setStyleSheet("background-color: #252526; padding: 10px; border-radius: 5px;")
+        stats_frame.setStyleSheet("background-color: #252526; padding: 1px; border-radius: 1px;")
         stats_layout = QVBoxLayout(stats_frame)
         
         # Здоров'я
         health_layout = QVBoxLayout()
-        health_label = QLabel("Здоров'я:")
-        self.health_bar = StatBar(self.game_state.health, self.game_state.max_health, "#E74C3C")
-        health_layout.addWidget(health_label)
-        health_layout.addWidget(self.health_bar)
+        self.health_num = QLabel(f"Health -- {self.game_state.health}")
+        health_layout.addWidget(self.health_num)
         
         # Щит
         armour_layout = QVBoxLayout()
-        armour_label = QLabel("Щит:")
-        self.armour_bar = StatBar(self.game_state.armour, self.game_state.max_armour, "#3498DB")
-        armour_layout.addWidget(armour_label)
-        armour_layout.addWidget(self.armour_bar)
+        self.armour_num = QLabel(f"Armour -- {self.game_state.armour}")
+        armour_layout.addWidget(self.armour_num)
+
+        # Атака
+        attack_layout = QVBoxLayout()
+        self.attack_num = QLabel(f"Attack -- {self.game_state.atk}")
+        attack_layout.addWidget(self.attack_num)
         
         # Додаємо статистику до рамки
         stats_layout.addLayout(health_layout)
         stats_layout.addLayout(armour_layout)
+        stats_layout.addLayout(attack_layout)
         
         # Інвентар
         inventory_group = QFrame()
         inventory_group.setFrameShape(QFrame.StyledPanel)
-        inventory_group.setStyleSheet("background-color: #252526; padding: 10px; border-radius: 5px;")
+        inventory_group.setStyleSheet("background-color: #252526; padding: 1px; border-radius: 1px;")
         inventory_layout = QVBoxLayout(inventory_group)
         
         inventory_label = QLabel("Інвентар:")
@@ -356,7 +358,10 @@ class GameInterface(QMainWindow):
         equip_button = QPushButton("Взяти/Надягнути")
         drop_button = QPushButton("Викинути")
 
-        change_bg_button = QPushButton("Змінити фон")
+        change_bg_button = QPushButton('''
+        Перейти на наступний рівень
+        Кімната не рахується якщо ви не перемогли ворога
+        ''')
         change_bg_button.clicked.connect(self.change_background)
         interface_layout.addWidget(change_bg_button)
         
@@ -369,32 +374,11 @@ class GameInterface(QMainWindow):
         drop_button.clicked.connect(self.drop_item)
         equip_button.clicked.connect(self.equip_item)
         
-        # Інструкції
-        instructions_frame = QFrame()
-        instructions_frame.setFrameShape(QFrame.StyledPanel)
-        instructions_frame.setStyleSheet("background-color: #252526; padding: 10px; border-radius: 5px;")
-        instructions_layout = QVBoxLayout(instructions_frame)
-        
-        instructions_label = QLabel("Керування:")
-        instructions_label.setStyleSheet("font-weight: bold;")
-        
-        instructions_text = QLabel(
-            "Стрілки: рух персонажа\n"
-            "Підійдіть до предмета, щоб підібрати його\n"
-            "Використовуйте зілля для відновлення\n"
-            "Рух витрачає енергію"
-        )
-        instructions_text.setWordWrap(True)
-        
-        instructions_layout.addWidget(instructions_label)
-        instructions_layout.addWidget(instructions_text)
-        
         # Додаємо всі елементи до інтерфейсу
         interface_layout.addWidget(title_label)
         interface_layout.addWidget(stats_frame)
         interface_layout.addWidget(inventory_group)
         interface_layout.addLayout(button_layout)
-        interface_layout.addWidget(instructions_frame)
         interface_layout.addStretch()
         
         # Додаємо всі частини до головного лейауту
