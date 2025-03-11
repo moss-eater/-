@@ -326,7 +326,7 @@ class PyGameWidget(QWidget):
             # Якщо знайдено ворога в радіусі атаки
             if closest_foe:
                 # Базове пошкодження залежить від атаки гравця
-                damage = self.game_state.atk
+                damage = self.game_state.attack
                 
                 # Модифікатори для різних типів зброї
                 if self.current_weapon == "Меч":
