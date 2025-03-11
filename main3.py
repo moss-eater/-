@@ -24,12 +24,15 @@ class GameState:
             {"name": "Золота монета", "x": 200, "y": 150},
             {"name": "Лук", "x": 150, "y": 300}
         ]
-
+class Foe():
+    def __init__(self, hp, arm):
+        self.hp = hp
 
 class PyGameWidget(QWidget):
     item_collected = pyqtSignal(str)
     health_changed = pyqtSignal(int)
     armour_changed = pyqtSignal(int)
+    attck_changed = pyqtSignal(int)
     
     def __init__(self, game_state, parent=None):
         super().__init__(parent)
