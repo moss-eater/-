@@ -20,7 +20,7 @@ class GameState():
         self.armour = 5
         self.max_armour = 50
         self.score = 0
-        self.inventory = ["Sword", "Potionhealt"]
+        self.inventory = ["Imperial_Standart_Equipment", "Potionhealth"]
         self.player_x = 250
         self.player_y = 500
         self.items_on_ground = []
@@ -30,6 +30,7 @@ class GameState():
         self.is_attacking = False  # Флаг, що показує чи гравець атакує
         self.attack_animation_time = 0  # Час початку анімації атаки
         self.attack_cooldown = 0.5  # Кулдаун атаки в секундах
+
 class Foe:
     def __init__(self, x, y, health=None, armor=None, attack=None, name="Ворог"):
         self.x = x
@@ -46,9 +47,6 @@ class Foe:
         self.attack_cooldown = 2.0  # Кулдаун атаки в секундах
         self.is_attacking = False  # Флаг, що показує чи ворог атакує
         self.attack_animation_time = 0  # Час початку анімації атаки
-    
-
-
 
 class PyGameWidget(QWidget):
     item_collected = pyqtSignal(str)
@@ -84,19 +82,25 @@ class PyGameWidget(QWidget):
 
         try:
             # Завантаження зображень зброї
-            self.sword_img = pygame.image.load("sahurd.png")
-            self.sword_img = pygame.transform.scale(self.sword_img, (30, 30))
+            self.Imperial_Standart_Equipment_img = pygame.image.load("Imperial_Standart_Equipment.png")
+            self.Imperial_Standart_Equipment_img = pygame.transform.scale(self.Imperial_Standart_Equipment_img, (30, 30))
             
-            self.bow_img = pygame.image.load("luk.png")
-            self.bow_img = pygame.transform.scale(self.bow_img, (30, 30))
+            self.Handmade_Set_img = pygame.image.load("Handmade_Set.png")
+            self.Handmade_Set_img = pygame.transform.scale(self.Handmade_Set_img, (30, 30))
+
+            self.Book_of_Basic_Magic_img = pygame.image.load("Book_of_Basic_Magic.png")
+            self.Book_of_Basic_Magic_img = pygame.transform.scale(self.Book_of_Basic_Magic_img, (30, 30))
+
+            self.Fighters_Guild_Instruments_img = pygame.image.load("Fighters_Guild_Instruments.png")
+            self.Fighters_Guild_Instruments_img = pygame.transform.scale(self.Fighters_Guild_Instruments_img, (30, 30))
 
             # Додаємо завантаження зображення для атаки ворога
             self.attacker_img = pygame.image.load("attacker.png")
             self.attacker_img = pygame.transform.scale(self.attacker_img, (40, 40))
         except Exception as e:
             print(f"Помилка завантаження зображень зброї: {e}")
-            self.sword_img = None
-            self.bow_img = None
+            self.Imperial_Standart_Equipment_img = None
+            self.Handmade_Set_img = None
             self.attacker_img = None
         
         # Змінна для поточної екіпіройваної зброї
@@ -143,7 +147,6 @@ class PyGameWidget(QWidget):
         
         except Exception as e:
             print(f"Помилка перевірки колізії: {e}")
-
         return True
     
     def update_game(self):
@@ -276,11 +279,15 @@ class PyGameWidget(QWidget):
                 # Візуалізація атаки
         if self.game_state.is_attacking:
             # Колір атаки залежить від екіпірованої зброї
-            attack_color = (255, 165, 0)  # Orange по замовчуванню
-            if self.current_weapon == "Sword":
+            attack_color = (255, 255, 255)  # Orange по замовчуванню
+            if self.current_weapon == "Imperial_Standart_Equipment":
                 attack_color = (255, 0, 0)  # Червоний для меча
-            elif self.current_weapon == "Bow":
+            elif self.current_weapon == "Handmade_Set":
                 attack_color = (0, 255, 0)  # Зелений для лука
+            elif self.current_weapon == "Book_of_Basic_Magic":
+                attack_color = (0, 0, 255)  # blu для magg
+            elif self.current_weapon == "Fighters_Guild_Instruments":
+                attack_color = (255, 0, 255)
 
             # Малюємо кружок атаки над гравцем
             attack_radius = 5  # Розмір кружка
@@ -295,19 +302,33 @@ class PyGameWidget(QWidget):
             attack_text = font.render("Attack!", True, attack_color)
             self.surface.blit(attack_text, (attack_x, attack_y))
 
-        if self.current_weapon == "Sword" and self.sword_img:
-            # Позиціонування Swordа трохи праворуч від центру персонажа
+        if self.current_weapon == "Imperial_Standart_Equipment" and self.Imperial_Standart_Equipment_img:
+            # Позиціонування Imperial_Standart_Equipmentа трохи праворуч від центру персонажа
 
             weapon_x = self.game_state.player_x
             weapon_y = self.game_state.player_y
-            self.surface.blit(self.sword_img, (weapon_x, weapon_y))
+            self.surface.blit(self.Imperial_Standart_Equipment_img, (weapon_x, weapon_y))
             #self.game_state.attack = self.game_state.attack + 5
         
-        elif self.current_weapon == "Bow" and self.bow_img:
-            # Позиціонування Bowа трохи ліворуч від центру персонажа
+        elif self.current_weapon == "Handmade_Set" and self.Handmade_Set_img:
+            # Позиціонування Handmade_Setа трохи ліворуч від центру персонажа
             weapon_x = self.game_state.player_x
             weapon_y = self.game_state.player_y
-            self.surface.blit(self.bow_img, (weapon_x, weapon_y))
+            self.surface.blit(self.Handmade_Set_img, (weapon_x, weapon_y))
+            #self.game_state.attack = self.game_state.attack + 5
+        
+        elif self.current_weapon == "Book_of_Basic_Magic" and self.Book_of_Basic_Magic_img:
+            # Позиціонування Handmade_Setа трохи ліворуч від центру персонажа
+            weapon_x = self.game_state.player_x
+            weapon_y = self.game_state.player_y
+            self.surface.blit(self.Book_of_Basic_Magic_img, (weapon_x, weapon_y))
+            #self.game_state.attack = self.game_state.attack + 5
+
+        elif self.current_weapon == "Fighters_Guild_Instruments" and self.Fighters_Guild_Instruments_img:
+            # Позиціонування Handmade_Setа трохи ліворуч від центру персонажа
+            weapon_x = self.game_state.player_x
+            weapon_y = self.game_state.player_y
+            self.surface.blit(self.Fighters_Guild_Instruments_img, (weapon_x, weapon_y))
             #self.game_state.attack = self.game_state.attack + 5
         
         
@@ -352,13 +373,13 @@ class PyGameWidget(QWidget):
                 damage = self.game_state.attack
                 
                 # Модифікатори для різних типів зброї
-                # if self.current_weapon == "Sword":
+                # if self.current_weapon == "Imperial_Standart_Equipment":
                 #     # Меч має шанс критичного удару
                 #     if random.random() < 0.2:  # 20% шанс критичного удару
                 #         damage *= 2
                 #         print("Критичний удар!")
                 #     pass
-                # elif self.current_weapon == "Bow":
+                # elif self.current_weapon == "Handmade_Set":
                 #     # Лук має більший радіус атаки, але менше пошкодження
                 #     # Вже враховано в self.game_state.attack
                 #     pass
@@ -499,9 +520,14 @@ class GameInterface(QMainWindow):
         }
         # Додати список можливих предметів
         self.possible_items = [
-            "Sword", 
-            "Bow", 
-            "Potionhealth"
+            "Imperial_Standart_Equipment", 
+            "Handmade_Set", 
+            "Potionhealth",
+            "Potionhealth",
+            "Potionhealth",
+            "Potionhealth",
+            "Book_of_Basic_Magic",
+            "Fighters_Guild_Instruments"
         ]
 
         # Оновити словник item_positions, щоб містив кілька позицій для кожної кімнати
@@ -761,10 +787,13 @@ class GameInterface(QMainWindow):
         item_name = selected_items[0].text()
         
             # Якщо викидаємо екіпіровану зброю, скидаємо її
-        if (item_name == "Sword" and self.game_widget.current_weapon == "Sword") or \
-        (item_name == "Bow" and self.game_widget.current_weapon == "Bow"):
+        if (item_name == "Imperial_Standart_Equipment" and self.game_widget.current_weapon == "Imperial_Standart_Equipment") or \
+            (item_name == "Handmade_Set" and self.game_widget.current_weapon == "Handmade_Set") or \
+            (item_name == "Book_of_Basic_Magic" and self.game_widget.current_weapon == "Book_of_Basic_Magic") or\
+            (item_name == "Fighters_Guild_Instruments" and self.game_widget.current_weapon == "Fighters_Guild_Instruments"):
             self.game_widget.current_weapon = None
             self.game_state.attack = 5  # Базове значення атаки
+            self.game_state.armour = 5 
             self.update_attack(self.game_state.attack)
         
         # Видаляємо предмет і додаємо на карту біля гравця
@@ -793,17 +822,30 @@ class GameInterface(QMainWindow):
         item_name = selected_items[0].text()
 
         # Логіка екіпірування зброї
-        if item_name == "Sword":
-            self.game_widget.current_weapon = "Sword"
-        elif item_name == "Bow":
-            self.game_widget.current_weapon = "Bow"
+        if item_name == "Imperial_Standart_Equipment":
+            self.game_widget.current_weapon = "Imperial_Standart_Equipment"
+        elif item_name == "Handmade_Set":
+            self.game_widget.current_weapon = "Handmade_Set"
+        elif item_name == "Book_of_Basic_Magic":
+            self.game_widget.current_weapon = "Book_of_Basic_Magic"
+        elif item_name == "Fighters_Guild_Instruments":
+            self.game_widget.current_weapon = "Fighters_Guild_Instruments"
         
         # Додаткова логіка для зміни статів гравця
-        if item_name == "Sword":
-            self.game_state.attack = 10  # Більша Attack
-        elif item_name == "Bow":
+        if item_name == "Imperial_Standart_Equipment":
+            self.game_state.attack = 11  # Більша Attack
+            self.game_state.armour = 8
+        elif item_name == "Handmade_Set":
             self.game_state.attack = 7   # Менша Attack
+            self.game_state.armour = 12
+        elif item_name == "Book_of_Basic_Magic":
+            self.game_state.attack = 9   # Менша Attack
             self.game_state.armour = 10
+        elif item_name == "Fighters_Guild_Instruments":
+            self.game_state.attack = 5   # Менша Attack
+            self.game_state.armour = 14
+
+
         else:
         # Якщо вибрано не зброю, не змінюємо поточну зброю
             pass
@@ -817,8 +859,8 @@ class GameInterface(QMainWindow):
         self.inventory_list.update_inventory()
 
         #головна штука -- зробити зміну у арморі гравця та його атаки
-        #також я думаю зробити механіки рандому для Swordа та Bowа 
-        #коли Bow, то шкода менша, то шанс удару по собі менший, коли Sword то шкода більша, шанс удару по собі більший
+        #також я думаю зробити механіки рандому для Imperial_Standart_Equipmentа та Handmade_Setа 
+        #коли Handmade_Set, то шкода менша, то шанс удару по собі менший, коли Imperial_Standart_Equipment то шкода більша, шанс удару по собі більший
     
     def unequip_weapon(self):
         self.game_widget.current_weapon = None
