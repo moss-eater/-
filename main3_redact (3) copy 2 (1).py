@@ -36,10 +36,10 @@ class Foe:
         self.x = x
         self.y = y
         # Генеруємо випадкові характеристики, якщо вони не задані
-        self.health = health if health is not None else random.randint(15, 30)
+        self.health = health if health is not None else random.randint(10, 25)
         self.max_health = self.health
-        self.armor = armor if armor is not None else random.randint(0, 10)
-        self.atk = attack if attack is not None else random.randint(2, 7)
+        self.armor = armor if armor is not None else random.randint(0, 16)
+        self.atk = attack if attack is not None else random.randint(2, 8)
         self.name = name
         self.is_alive = True
         self.speed = 1  # Швидкість руху ворога
@@ -204,7 +204,7 @@ class PyGameWidget(QWidget):
                 distance_to_player = ((self.game_state.player_x - foe.x)**2 + 
                                     (self.game_state.player_y - foe.y)**2)**0.5
                 
-                if distance_to_player < 43:  # Радіус колізії
+                if distance_to_player < 42:  # Радіус колізії
                     # Ворог атакує гравця кожні 2 секунди
                     if self.game_state.current_time - foe.last_attack_time >= foe.attack_cooldown:
                         damage = max(1, foe.atk - self.game_state.armour / 5)
@@ -518,6 +518,14 @@ class GameInterface(QMainWindow):
             "lg_03.png": (250, 150), # координати для xdth кімнати
             "lg_04.png": (250, 375) # координати для g`zn кімнати
         }
+        self.hero_positions = {
+            "lg_00.png": (250, 500),    # координати для gthi кімнати
+            "lg_01.png": (250, 500),    # координати для lheu кімнати
+            "lg_02.png": (250, 500),    # координати для nhtn кімнати
+            "lg_03.png": (250, 500), # координати для xdth кімнати
+            "lg_04.png": (250, 500) # координати для g`zn кімнати
+        }
+        
         # Додати список можливих предметів
         self.possible_items = [
             "Imperial_Standart_Equipment", 
@@ -737,6 +745,12 @@ class GameInterface(QMainWindow):
             # Якщо координат для цієї кімнати немає, використовуємо стандартні
             foe_x, foe_y = 250, 250
 
+        if background_file in self.hero_positions:
+            self.game_state.player_x, self.game_state.player_y = self.hero_positions[background_file]
+        else:
+            # Якщо координат для цієї кімнати немає, використовуємо стандартні
+            self.game_state.player_x, self.game_state.player_y = 250, 500
+
         # Створюємо ворога з випадковими характеристиками
         health = random.randint(7, 30)
         armor = random.randint(0, 10)
@@ -744,7 +758,7 @@ class GameInterface(QMainWindow):
         
         
         # Типи ворогів
-        foe_types = ["Undead", "Imperial", "Mutant", "Bandit"]
+        foe_types = ["Undead", "Imperial", "Mutant", "Bandit", "Nomad"]
         foe_name = random.choice(foe_types)
         
         # Додаємо ворога до списку з фіксованими координатами
