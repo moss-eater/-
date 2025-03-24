@@ -487,6 +487,7 @@ class GameInterface(QMainWindow):
         super().__init__()
         self.setWindowTitle("PyGame + PyQt5 гра")
         self.setGeometry(100, 100, 1000, 600)
+        self.game_over = False
 
         
         # Ініціалізуємо стан гри
@@ -676,7 +677,45 @@ class GameInterface(QMainWindow):
     
     def update_health(self, health):
         self.health_num.setText(f"Health -- {health}")
+        if health <= 0 and not self.game_over:
+            self.trigger_game_over()
 
+    def trigger_game_over(self):
+        self.game_over = True
+        self.game_widget.timer.stop()
+
+        self.game_over_label = QLabel("GAME OVER")
+        self.game_over_label.setStyleSheet("font-size: 32px; font-weight: bold; color: red;")
+        self.game_over_label.setAlignment(Qt.AlignCenter)
+
+        self.restart_button = QPushButton("Restart")
+        self.restart_button.setStyleSheet("font-size: 18px; padding: 10px;")
+        self.restart_button.clicked.connect(self.restart_game)
+
+        layout = self.centralWidget().layout()
+        game_over_layout = QVBoxLayout()
+        game_over_layout.setAlignment(Qt.AlignCenter)
+        game_over_layout.addWidget(self.game_over_label)
+        game_over_layout.addWidget(self.restart_button)
+
+        layout.addLayout(game_over_layout)
+
+    def restart_game(self):
+        self.game_over_label.hide()
+        self.restart_button.hide()
+
+        self.game_state = GameState()
+        self.game_widget.game_state = self.game_state
+        self.game_widget.timer.start()
+        self.health_num.setText(f"Health -- {self.game_state.health}")
+        self.armour_num.setText(f"Armour -- {self.game_state.armour}")
+        self.attack_num.setText(f"Attack -- {self.game_state.attack}")
+        self.inventory_list.game_state = self.game_state
+        self.inventory_list.update_inventory()
+
+        self.game_over = False
+        self.change_background()        
+    
     def update_attack(self, attack):
         self.attack_num.setText(f"Attack -- {attack}")
     
